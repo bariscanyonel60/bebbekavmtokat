@@ -46,8 +46,10 @@ Test paketi yok; değişiklikleri tarayıcıda kontrol edin (ana sayfa, `/katego
 
 ## Deploy
 
-- Vercel: GitHub `bariscanyonel60/bebbekavmtokat` reposunun `main` dalına her push otomatik production deploy'dur. `vercel.json` build komutu `prisma migrate deploy && next build` (bölge `fra1`).
-- Build sırasında sayfalar veritabanından üretildiği için Vercel ortam değişkenlerinde `DATABASE_URL` (internetten erişilebilen MySQL) build'den önce tanımlı olmalı.
+- Vercel: GitHub `bariscanyonel60/bebbekavmtokat` reposunun `main` dalına her push otomatik production deploy'dur. `vercel.json` build komutu `sh scripts/vercel-build.sh` (bölge `fra1`).
+- `DATABASE_URL` tanımlıysa build `prisma migrate deploy && next build` çalıştırır (internetten erişilebilen MySQL gerekir).
+- `DATABASE_URL` yoksa **demo modu**: `scripts/demo-db.mjs` şemanın SQLite kopyasını (`prisma/demo/`, gitignore'da) üretip seed verisini yükler; `src/lib/db.ts` bunu kullanır, `robots.txt` tüm siteyi engeller. Admin değişiklikleri sunucu örneğinin `/tmp` kopyasına yazılır, kalıcı değildir. Gerçek DB bağlanınca Vercel'e `DATABASE_URL` eklenip redeploy edilir; kod değişikliği gerekmez.
+- Prisma kodu hem MySQL hem SQLite istemcisiyle derlenmeli: `skipDuplicates`, `mode: "insensitive"`, raw SQL gibi MySQL'e özgü özellikler kullanmayın.
 - Production'da `AUTH_SECRET` güçlü ve benzersiz olmalı; `SITE_URL=https://bebbekavm.com`.
 - Serverless (Vercel/Netlify) için Cloudinary değişkenleri zorunlu; yerel upload klasörü kalıcı değildir.
 

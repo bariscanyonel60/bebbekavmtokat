@@ -9,7 +9,7 @@ const db = new PrismaClient();
 
 function assertSafeTarget() {
   const url = process.env.DATABASE_URL ?? "";
-  const isLocal = /@(127\.0\.0\.1|localhost)(:\d+)?\//.test(url);
+  const isLocal = /@(127\.0\.0\.1|localhost)(:\d+)?\//.test(url) || url.startsWith("file:");
   if (!isLocal && process.env.SEED_ALLOW_REMOTE !== "true") {
     throw new Error(
       "Seed, katalog tablolarını sıfırlar. Uzak bir veritabanında çalıştırmak için SEED_ALLOW_REMOTE=true ayarlayın.",

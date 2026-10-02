@@ -31,7 +31,8 @@ const PRODUCTION_SITE_URL = "https://bebbekavm.com";
 
 export async function getSiteUrl(): Promise<string> {
   const settings = await getSettings();
-  const fallback = process.env.NODE_ENV === "production" ? PRODUCTION_SITE_URL : "http://localhost:3000";
+  const vercelUrl = process.env.VERCEL_PROJECT_PRODUCTION_URL ? `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}` : "";
+  const fallback = process.env.NODE_ENV === "production" ? vercelUrl || PRODUCTION_SITE_URL : "http://localhost:3000";
   const raw = settings.siteUrl || process.env.SITE_URL || fallback;
   return raw.replace(/\/+$/, "");
 }

@@ -165,7 +165,7 @@ export async function saveProduct(productId: string | null, _prev: ActionState, 
 
       await tx.productAttributeValue.deleteMany({ where: { productId: product.id } });
       if (data.attributeValueIds.length) {
-        await tx.productAttributeValue.createMany({ data: data.attributeValueIds.map((attributeValueId) => ({ productId: product.id, attributeValueId })), skipDuplicates: true });
+        await tx.productAttributeValue.createMany({ data: [...new Set(data.attributeValueIds)].map((attributeValueId) => ({ productId: product.id, attributeValueId })) });
       }
 
       await tx.productVariant.deleteMany({ where: { productId: product.id } });

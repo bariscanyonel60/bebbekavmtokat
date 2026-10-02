@@ -39,6 +39,7 @@ yarn-error.log*
 /.data/
 /public/uploads/
 /.netlify/
+/prisma/demo/
 
 # vercel
 .vercel
