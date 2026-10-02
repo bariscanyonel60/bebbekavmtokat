@@ -1,0 +1,141 @@
+@import "tailwindcss" source("../");
+
+@theme {
+  /* Logo renkleri: mavi BEB, pembe BEK, yeşil AVM şeridi, koyu gri yazı. */
+  --color-brand-blue: #0072ce;
+  --color-brand-blue-deep: #005ba6;
+  --color-brand-pink: #e8007f;
+  --color-brand-green: #9ab812;
+
+  --color-ivory: #fcfaf7;
+  --color-cream: #f6f1ea;
+  --color-sand: #ece5da;
+  --color-beige: #d9c7ae;
+  /* *-deep tonlar açık zeminde metin olarak kullanılır; 4.5:1 kontrastın altına düşürmeyin. */
+  --color-sage: #c5da7e;
+  --color-sage-soft: #eff5dd;
+  --color-sage-deep: #4d6a00;
+  --color-powder: #b8d7f3;
+  --color-powder-soft: #e6f1fc;
+  --color-peach: #fbc8e0;
+  --color-peach-soft: #fdebf4;
+  --color-rose: #f39cc6;
+  --color-rose-deep: #c0006a;
+  --color-ink: #1f1d1e;
+  --color-ink-soft: #555052;
+  --color-ink-muted: #6b6668;
+  --color-line: #ebe5dc;
+  --color-line-strong: #dcd3c6;
+  --color-wa: #1d6b4f;
+  --color-wa-soft: #e4f0ea;
+
+  --font-sans: var(--font-jakarta), ui-sans-serif, system-ui, sans-serif;
+  --font-display: var(--font-fraunces), ui-serif, Georgia, serif;
+
+  --radius-xl: 1rem;
+  --radius-2xl: 1.25rem;
+  --radius-3xl: 1.75rem;
+
+  --shadow-soft: 0 1px 2px rgb(43 40 38 / 0.04), 0 8px 24px -12px rgb(43 40 38 / 0.12);
+  --shadow-lift: 0 2px 4px rgb(43 40 38 / 0.04), 0 18px 40px -18px rgb(43 40 38 / 0.22);
+
+  --ease-soft: cubic-bezier(0.22, 1, 0.36, 1);
+
+  --animate-fade-in: fade-in 0.5s var(--ease-soft) both;
+  --animate-fade-up: fade-up 0.6s var(--ease-soft) both;
+  --animate-marquee: marquee 60s linear infinite;
+
+  @keyframes fade-in {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+  @keyframes fade-up {
+    from { opacity: 0; transform: translateY(12px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  @keyframes marquee {
+    from { transform: translateX(0); }
+    to { transform: translateX(-50%); }
+  }
+}
+
+@layer base {
+  html {
+    -webkit-text-size-adjust: 100%;
+    text-rendering: optimizeLegibility;
+  }
+
+  body {
+    background: var(--color-ivory);
+    color: var(--color-ink);
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--color-brand-blue);
+    outline-offset: 3px;
+    border-radius: 6px;
+  }
+
+  ::selection {
+    background: var(--color-peach);
+    color: var(--color-ink);
+  }
+
+  [hidden] {
+    display: none !important;
+  }
+}
+
+@layer components {
+  .container-page {
+    width: 100%;
+    max-width: 1440px;
+    margin-inline: auto;
+    padding-inline: 1.25rem;
+  }
+  @media (min-width: 768px) {
+    .container-page { padding-inline: 2rem; }
+  }
+  @media (min-width: 1280px) {
+    .container-page { padding-inline: 3rem; }
+  }
+
+  .eyebrow {
+    font-size: 0.72rem;
+    font-weight: 600;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--color-ink-muted);
+  }
+
+  .prose-soft p + p {
+    margin-top: 1rem;
+  }
+
+  .no-scrollbar {
+    scrollbar-width: none;
+  }
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+/* Katman dışında: Tailwind utility katmanındaki `inline-flex` bu kuralı ezmesin. */
+@media (max-width: 1023px) {
+  body:has([data-sticky-cta]) [data-floating-wa] {
+    display: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

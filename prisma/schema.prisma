@@ -1,0 +1,332 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+// ─── Kullanıcı ────────────────────────────────────────────────────────────────
+
+enum UserRole {
+  ADMIN
+  EDITOR
+}
+
+model User {
+  id           String   @id @default(cuid())
+  email        String   @unique
+  name         String
+  passwordHash String
+  role         UserRole @default(ADMIN)
+  isActive     Boolean  @default(true)
+  lastLoginAt  DateTime?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
+// ─── Katalog ─────────────────────────────────────────────────────────────────
+
+model Brand {
+  id             String    @id @default(cuid())
+  name           String
+  slug           String    @unique
+  logoUrl        String?
+  description    String?   @db.Text
+  seoTitle       String?
+  seoDescription String?   @db.VarChar(320)
+  isActive       Boolean   @default(true)
+  isFeatured     Boolean   @default(true)
+  sortOrder      Int       @default(0)
+  products       Product[]
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  @@index([isActive, sortOrder])
+}
+
+model Category {
+  id               String              @id @default(cuid())
+  name             String
+  slug             String              @unique
+  parentId         String?
+  parent           Category?           @relation("CategoryTree", fields: [parentId], references: [id], onDelete: SetNull)
+  children         Category[]          @relation("CategoryTree")
+  tagline          String?
+  description      String?             @db.Text
+  imageUrl         String?
+  bannerUrl        String?
+  icon             String?
+  seoTitle         String?
+  seoDescription   String?             @db.VarChar(320)
+  sortOrder        Int                 @default(0)
+  isActive         Boolean             @default(true)
+  showInMenu       Boolean             @default(true)
+  isPopular        Boolean             @default(false)
+  popularLabel     String?
+  isHomeFeatured   Boolean             @default(false)
+  homeSortOrder    Int                 @default(0)
+  primaryProducts  Product[]           @relation("PrimaryCategory")
+  products         ProductCategory[]
+  attributes       CategoryAttribute[]
+  createdAt        DateTime            @default(now())
+  updatedAt        DateTime            @updatedAt
+
+  @@index([parentId, sortOrder])
+  @@index([isActive])
+}
+
+enum StockStatus {
+  IN_STOCK
+  LOW_STOCK
+  OUT_OF_STOCK
+  PRE_ORDER
+  ASK_STORE
+}
+
+enum ProductKind {
+  STANDARD
+  FURNITURE_SET
+}
+
+model Product {
+  id                String                  @id @default(cuid())
+  name              String
+  slug              String                  @unique
+  sku               String                  @unique
+  kind              ProductKind             @default(STANDARD)
+  brandId           String?
+  brand             Brand?                  @relation(fields: [brandId], references: [id], onDelete: SetNull)
+  primaryCategoryId String?
+  primaryCategory   Category?               @relation("PrimaryCategory", fields: [primaryCategoryId], references: [id], onDelete: SetNull)
+  categories        ProductCategory[]
+  price             Decimal?                @db.Decimal(12, 2)
+  salePrice         Decimal?                @db.Decimal(12, 2)
+  showPrice         Boolean                 @default(true)
+  stockStatus       StockStatus             @default(IN_STOCK)
+  isNew             Boolean                 @default(false)
+  isBestSeller      Boolean                 @default(false)
+  isFeatured        Boolean                 @default(false)
+  isCampaign        Boolean                 @default(false)
+  shortDescription  String?                 @db.VarChar(500)
+  description       String?                 @db.Text
+  /// [{ "label": string, "value": string }]
+  specs             Json?
+  /// [{ "label": string, "value": string }]
+  dimensions        Json?
+  /// Mobilya takımı içeriği: [{ "name": string, "dimensions": string }]
+  setItems          Json?
+  ageRange          String?
+  material          String?
+  tags              String?                 @db.VarChar(500)
+  deliveryInfo      String?                 @db.Text
+  warrantyInfo      String?                 @db.Text
+  seoTitle          String?
+  seoDescription    String?                 @db.VarChar(320)
+  /// Arama için normalize edilmiş metin (Türkçe karakterler sadeleştirilmiş).
+  searchText        String?                 @db.Text
+  isActive          Boolean                 @default(true)
+  sortOrder         Int                     @default(0)
+  images            ProductImage[]
+  variants          ProductVariant[]
+  attributeValues   ProductAttributeValue[]
+  createdAt         DateTime                @default(now())
+  updatedAt         DateTime                @updatedAt
+
+  @@index([isActive, isFeatured])
+  @@index([isActive, isBestSeller])
+  @@index([isActive, isNew])
+  @@index([brandId])
+  @@index([primaryCategoryId])
+}
+
+/// Bir ürün birden fazla kategori/koleksiyonda listelenebilir.
+model ProductCategory {
+  productId  String
+  categoryId String
+  product    Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  category   Category @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  sortOrder  Int      @default(0)
+
+  @@id([productId, categoryId])
+  @@index([categoryId])
+}
+
+model ProductImage {
+  id        String   @id @default(cuid())
+  productId String
+  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  url       String
+  alt       String?
+  width     Int?
+  height    Int?
+  sortOrder Int      @default(0)
+  isPrimary Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  @@index([productId, sortOrder])
+}
+
+/// Renk/model varyantları. Gelecekte sepet satırları varyanta bağlanacak.
+model ProductVariant {
+  id          String      @id @default(cuid())
+  productId   String
+  product     Product     @relation(fields: [productId], references: [id], onDelete: Cascade)
+  name        String
+  sku         String?     @unique
+  colorHex    String?
+  imageUrl    String?
+  price       Decimal?    @db.Decimal(12, 2)
+  stockStatus StockStatus @default(IN_STOCK)
+  sortOrder   Int         @default(0)
+  isActive    Boolean     @default(true)
+
+  @@index([productId])
+}
+
+// ─── Dinamik filtre özellikleri ───────────────────────────────────────────────
+
+enum AttributeType {
+  SELECT
+  BOOLEAN
+  COLOR
+}
+
+/// Ör. "Tip" (travel-sistem, kabin-boy), "Kg Aralığı", "ISOFIX", "Renk", "Materyal".
+model Attribute {
+  id           String                @id @default(cuid())
+  name         String
+  slug         String                @unique
+  type         AttributeType         @default(SELECT)
+  unit         String?
+  isFilterable Boolean               @default(true)
+  sortOrder    Int                   @default(0)
+  values       AttributeValue[]
+  categories   CategoryAttribute[]
+}
+
+model AttributeValue {
+  id          String                  @id @default(cuid())
+  attributeId String
+  attribute   Attribute               @relation(fields: [attributeId], references: [id], onDelete: Cascade)
+  value       String
+  slug        String
+  colorHex    String?
+  sortOrder   Int                     @default(0)
+  products    ProductAttributeValue[]
+
+  @@unique([attributeId, slug])
+}
+
+model ProductAttributeValue {
+  productId        String
+  attributeValueId String
+  product          Product        @relation(fields: [productId], references: [id], onDelete: Cascade)
+  attributeValue   AttributeValue @relation(fields: [attributeValueId], references: [id], onDelete: Cascade)
+
+  @@id([productId, attributeValueId])
+  @@index([attributeValueId])
+}
+
+/// Hangi kategoride hangi filtrelerin gösterileceği. Alt kategoriler üst kategorinin filtrelerini devralır.
+model CategoryAttribute {
+  categoryId  String
+  attributeId String
+  category    Category  @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  attribute   Attribute @relation(fields: [attributeId], references: [id], onDelete: Cascade)
+  sortOrder   Int       @default(0)
+
+  @@id([categoryId, attributeId])
+}
+
+// ─── İçerik / CMS ────────────────────────────────────────────────────────────
+
+enum TextTheme {
+  DARK
+  LIGHT
+}
+
+model HeroSlide {
+  id                String    @id @default(cuid())
+  eyebrow           String?
+  title             String
+  description       String?   @db.VarChar(500)
+  desktopImageUrl   String
+  mobileImageUrl    String?
+  imageAlt          String?
+  primaryCtaLabel   String?
+  primaryCtaHref    String?
+  showWhatsappCta   Boolean   @default(true)
+  textTheme         TextTheme @default(DARK)
+  sortOrder         Int       @default(0)
+  isActive          Boolean   @default(true)
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+}
+
+enum BannerPlacement {
+  HOME_PRIMARY
+  HOME_SECONDARY
+  HOME_SPLIT
+  MEGA_MENU
+}
+
+model Banner {
+  id             String          @id @default(cuid())
+  placement      BannerPlacement @default(HOME_PRIMARY)
+  eyebrow        String?
+  title          String
+  description    String?         @db.VarChar(500)
+  ctaLabel       String?
+  href           String?
+  imageUrl       String
+  mobileImageUrl String?
+  imageAlt       String?
+  textTheme      TextTheme       @default(DARK)
+  sortOrder      Int             @default(0)
+  isActive       Boolean         @default(true)
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+
+  @@index([placement, isActive, sortOrder])
+}
+
+/// Ana sayfa bölüm sırası ve görünürlüğü.
+model HomeSection {
+  id        String  @id @default(cuid())
+  key       String  @unique
+  title     String?
+  subtitle  String? @db.VarChar(500)
+  isActive  Boolean @default(true)
+  sortOrder Int     @default(0)
+}
+
+/// Anahtar/değer genel ayarlar (WhatsApp numarası, iletişim, sosyal medya...).
+model SiteSetting {
+  key       String   @id
+  value     String   @db.Text
+  updatedAt DateTime @updatedAt
+}
+
+/// Statik sayfalar için SEO (home, urunler, markalar, hakkimizda, iletisim...).
+model SeoSetting {
+  key         String   @id
+  title       String?
+  description String?  @db.VarChar(320)
+  ogImageUrl  String?
+  noIndex     Boolean  @default(false)
+  updatedAt   DateTime @updatedAt
+}
+
+/// KVKK, gizlilik, çerez gibi metin sayfaları.
+model Page {
+  id             String   @id @default(cuid())
+  slug           String   @unique
+  title          String
+  content        String   @db.Text
+  seoTitle       String?
+  seoDescription String?  @db.VarChar(320)
+  isActive       Boolean  @default(true)
+  updatedAt      DateTime @updatedAt
+}
