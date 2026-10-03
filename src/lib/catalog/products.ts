@@ -16,9 +16,6 @@ export type ProductCardData = {
   category: { name: string; slug: string } | null;
   image: { url: string; alt: string } | null;
   hoverImage: { url: string; alt: string } | null;
-  price: number | null;
-  salePrice: number | null;
-  showPrice: boolean;
   stockStatus: StockStatus;
   isNew: boolean;
   isBestSeller: boolean;
@@ -31,9 +28,6 @@ export const productCardSelect = {
   slug: true,
   sku: true,
   kind: true,
-  price: true,
-  salePrice: true,
-  showPrice: true,
   stockStatus: true,
   isNew: true,
   isBestSeller: true,
@@ -65,9 +59,6 @@ export function toProductCard(row: ProductCardRow): ProductCardData {
     category: row.primaryCategory,
     image: primary ? { url: primary.url, alt: primary.alt ?? row.name } : null,
     hoverImage: secondary ? { url: secondary.url, alt: secondary.alt ?? row.name } : null,
-    price: toNumber(row.price),
-    salePrice: toNumber(row.salePrice),
-    showPrice: row.showPrice,
     stockStatus: row.stockStatus,
     isNew: row.isNew,
     isBestSeller: row.isBestSeller,
@@ -126,15 +117,6 @@ function buildFilterWhere(state: FilterState, subCategoryIds: string[]): Prisma.
       },
     });
   }
-  if (state.minPrice !== null || state.maxPrice !== null) {
-    const range: Prisma.DecimalNullableFilter = {};
-    if (state.minPrice !== null) range.gte = state.minPrice;
-    if (state.maxPrice !== null) range.lte = state.maxPrice;
-    and.push({
-      showPrice: true,
-      OR: [{ salePrice: range }, { salePrice: null, price: range }],
-    });
-  }
   if (state.inStock) and.push({ stockStatus: { in: ["IN_STOCK", "LOW_STOCK"] } });
   if (state.campaign) and.push({ isCampaign: true });
   if (state.isNew) and.push({ isNew: true });
@@ -146,10 +128,6 @@ function buildOrderBy(sort: FilterState["sort"]): Prisma.ProductOrderByWithRelat
   switch (sort) {
     case "newest":
       return [{ createdAt: "desc" }];
-    case "price-asc":
-      return [{ price: { sort: "asc", nulls: "last" } }, { createdAt: "desc" }];
-    case "price-desc":
-      return [{ price: { sort: "desc", nulls: "last" } }, { createdAt: "desc" }];
     case "name":
       return [{ name: "asc" }];
     case "recommended":
@@ -199,21 +177,19 @@ export type AttributeFacet = { slug: string; name: string; type: "SELECT" | "BOO
 export type Facets = {
   brands: FacetOption[];
   attributes: AttributeFacet[];
-  priceRange: { min: number; max: number } | null;
 };
 
 /** Mevcut kapsamdaki ürünlere göre marka/özellik seçeneklerini ve adetlerini hesaplar. */
 export async function getFacets(scope: ListingScope, attributeIds: string[]): Promise<Facets> {
   const scopeWhere = buildScopeWhere(scope);
 
-  const [brandGroups, valueGroups, priceAgg] = await Promise.all([
+  const [brandGroups, valueGroups] = await Promise.all([
     db.product.groupBy({ by: ["brandId"], where: { ...scopeWhere, brandId: { not: null } }, _count: { _all: true } }),
     db.productAttributeValue.groupBy({
       by: ["attributeValueId"],
       where: { product: scopeWhere, attributeValue: { attributeId: { in: attributeIds } } },
       _count: { _all: true },
     }),
-    db.product.aggregate({ where: { ...scopeWhere, showPrice: true, price: { not: null } }, _min: { price: true }, _max: { price: true } }),
   ]);
 
   const brandIds = brandGroups.map((group) => group.brandId).filter((id): id is string => Boolean(id));
@@ -246,13 +222,9 @@ export async function getFacets(scope: ListingScope, attributeIds: string[]): Pr
     facet.options.push({ slug: value.slug, label: value.value, count: valueCount.get(value.id) ?? 0, colorHex: value.colorHex });
   }
 
-  const min = toNumber(priceAgg._min.price);
-  const max = toNumber(priceAgg._max.price);
-
   return {
     brands: brands.map((brand) => ({ slug: brand.slug, label: brand.name, count: brandCount.get(brand.id) ?? 0 })),
     attributes: [...attributeMap.values()],
-    priceRange: min !== null && max !== null ? { min: Math.floor(min), max: Math.ceil(max) } : null,
   };
 }
 

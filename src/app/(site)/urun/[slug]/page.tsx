@@ -2,10 +2,9 @@ import type { Metadata } from "next";
 import type { ReactNode } from "react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import type { StockStatus } from "@prisma/client";
 import { Check, MessageCircle, Ruler, ShieldCheck, Truck } from "lucide-react";
 import { FavoriteButton } from "@/components/product/favorite-button";
-import { Price, StockLabel } from "@/components/product/price";
+import { StockLabel } from "@/components/product/stock-label";
 import { ProductBadges } from "@/components/product/product-badges";
 import { ProductGrid } from "@/components/product/product-card";
 import { ProductGallery } from "@/components/product/product-gallery";
@@ -14,9 +13,9 @@ import { Breadcrumbs } from "@/components/ui/breadcrumbs";
 import { SectionHeading } from "@/components/ui/section-heading";
 import { WhatsAppLink } from "@/components/whatsapp/whatsapp-link";
 import { getAncestors, getCategoryIndex } from "@/lib/catalog/categories";
-import { getProductBySlug, getRelatedProducts, parseRows, parseSetItems, toNumber, type ProductDetail } from "@/lib/catalog/products";
+import { getProductBySlug, getRelatedProducts, parseRows, parseSetItems, type ProductDetail } from "@/lib/catalog/products";
 import { localDescription, productTitle } from "@/lib/local-seo";
-import { absoluteUrl, buildMetadata, organizationId, serializeJsonLd } from "@/lib/seo";
+import { absoluteUrl, buildMetadata, serializeJsonLd } from "@/lib/seo";
 import { getSettings, getSiteUrl } from "@/lib/settings";
 import { getProductWhatsAppHref } from "@/lib/whatsapp-server";
 
@@ -40,16 +39,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   });
 }
 
-const SCHEMA_AVAILABILITY: Record<StockStatus, string> = {
-  IN_STOCK: "https://schema.org/InStock",
-  LOW_STOCK: "https://schema.org/LimitedAvailability",
-  OUT_OF_STOCK: "https://schema.org/OutOfStock",
-  PRE_ORDER: "https://schema.org/PreOrder",
-  ASK_STORE: "https://schema.org/InStoreOnly",
-};
-
 function productJsonLd(product: ProductDetail, siteUrl: string) {
-  const price = toNumber(product.salePrice) ?? toNumber(product.price);
   return {
     "@context": "https://schema.org",
     "@type": "Product",
@@ -60,17 +50,6 @@ function productJsonLd(product: ProductDetail, siteUrl: string) {
     url: absoluteUrl(siteUrl, `/urun/${product.slug}`),
     brand: product.brand ? { "@type": "Brand", name: product.brand.name } : undefined,
     category: product.primaryCategory?.name,
-    offers:
-      product.showPrice && price !== null
-        ? {
-            "@type": "Offer",
-            priceCurrency: "TRY",
-            price: price.toFixed(2),
-            availability: SCHEMA_AVAILABILITY[product.stockStatus],
-            url: absoluteUrl(siteUrl, `/urun/${product.slug}`),
-            seller: { "@id": organizationId(siteUrl) },
-          }
-        : undefined,
   };
 }
 
@@ -140,8 +119,6 @@ export default async function ProductPage({ params }: PageProps) {
   const features = product.attributeValues.map((item) => ({ label: item.attributeValue.attribute.name, value: item.attributeValue.value }));
   const deliveryInfo = product.deliveryInfo || settings.deliveryInfo;
   const warrantyInfo = product.warrantyInfo || settings.warrantyInfo;
-  const price = toNumber(product.price);
-  const salePrice = toNumber(product.salePrice);
 
   return (
     <>
@@ -176,7 +153,6 @@ export default async function ProductPage({ params }: PageProps) {
             </p>
 
             <div className="mt-6 flex flex-wrap items-center gap-4">
-              <Price price={price} salePrice={salePrice} showPrice={product.showPrice} size="lg" />
               <StockLabel status={product.stockStatus} />
             </div>
 
@@ -235,8 +211,8 @@ export default async function ProductPage({ params }: PageProps) {
             ) : null}
 
             <div className="mt-8 grid gap-3 sm:grid-cols-2">
-              <WhatsAppLink href={infoHref} label="WhatsApp'tan Bilgi Al" variant="whatsapp" size="lg" intent="info" className="w-full" />
-              <WhatsAppLink href={orderHref} label={isFurniture ? "Ölçü & Sipariş Sor" : "WhatsApp ile Sipariş Ver"} variant="whatsapp-soft" size="lg" intent="order" className="w-full" />
+              <WhatsAppLink href={orderHref} label={isFurniture ? "Ölçü & Sipariş Sor" : "WhatsApp ile Sipariş Ver"} variant="whatsapp" size="lg" intent="order" className="w-full" />
+              <WhatsAppLink href={infoHref} label="Fiyat & Bilgi Al" variant="whatsapp-soft" size="lg" intent="info" className="w-full" />
             </div>
             <p className="mt-3 flex items-center gap-2 text-sm text-ink-soft">
               <MessageCircle className="size-4 text-wa" aria-hidden="true" />
@@ -331,8 +307,8 @@ export default async function ProductPage({ params }: PageProps) {
 
       <div data-sticky-cta className="fixed inset-x-0 bottom-0 z-30 border-t border-line bg-ivory/95 px-4 pb-[calc(env(safe-area-inset-bottom)+0.75rem)] pt-3 backdrop-blur lg:hidden">
         <div className="mx-auto grid max-w-xl grid-cols-2 gap-2.5">
-          <WhatsAppLink href={infoHref} label="Bilgi Al" variant="whatsapp" size="md" intent="info" className="w-full" />
-          <WhatsAppLink href={orderHref} label="Sipariş Ver" variant="whatsapp-soft" size="md" intent="order" className="w-full" />
+          <WhatsAppLink href={orderHref} label="Sipariş Ver" variant="whatsapp" size="md" intent="order" className="w-full" />
+          <WhatsAppLink href={infoHref} label="Bilgi Al" variant="whatsapp-soft" size="md" intent="info" className="w-full" />
         </div>
       </div>
 

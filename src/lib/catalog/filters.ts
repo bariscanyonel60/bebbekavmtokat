@@ -1,8 +1,6 @@
 export const SORT_OPTIONS = [
   { value: "recommended", label: "Önerilen" },
   { value: "newest", label: "En Yeniler" },
-  { value: "price-asc", label: "Fiyat: Artan" },
-  { value: "price-desc", label: "Fiyat: Azalan" },
   { value: "name", label: "İsme Göre (A-Z)" },
 ] as const;
 
@@ -13,8 +11,6 @@ export type FilterState = {
   brands: string[];
   categories: string[];
   attributes: Record<string, string[]>;
-  minPrice: number | null;
-  maxPrice: number | null;
   inStock: boolean;
   campaign: boolean;
   isNew: boolean;
@@ -24,7 +20,7 @@ export type FilterState = {
 
 export type RawSearchParams = Record<string, string | string[] | undefined>;
 
-const RESERVED_KEYS = new Set(["q", "brand", "cat", "min", "max", "stock", "campaign", "new", "sort", "page"]);
+const RESERVED_KEYS = new Set(["q", "brand", "cat", "stock", "campaign", "new", "sort", "page"]);
 const SLUG_PATTERN = /^[a-z0-9-]{1,80}$/;
 
 function first(value: string | string[] | undefined): string {
@@ -65,8 +61,6 @@ export function parseFilters(params: RawSearchParams, allowedAttributeSlugs: str
     brands: list(params.brand),
     categories: list(params.cat),
     attributes,
-    minPrice: toNumber(first(params.min)),
-    maxPrice: toNumber(first(params.max)),
     inStock: first(params.stock) === "var",
     campaign: first(params.campaign) === "1",
     isNew: first(params.new) === "1",
@@ -83,8 +77,6 @@ export function serializeFilters(state: FilterState): string {
   for (const [key, values] of Object.entries(state.attributes)) {
     if (values.length) params.set(key, values.join(","));
   }
-  if (state.minPrice !== null) params.set("min", String(state.minPrice));
-  if (state.maxPrice !== null) params.set("max", String(state.maxPrice));
   if (state.inStock) params.set("stock", "var");
   if (state.campaign) params.set("campaign", "1");
   if (state.isNew) params.set("new", "1");
@@ -99,8 +91,6 @@ export function hasActiveFilters(state: FilterState): boolean {
     state.brands.length > 0 ||
     state.categories.length > 0 ||
     Object.keys(state.attributes).length > 0 ||
-    state.minPrice !== null ||
-    state.maxPrice !== null ||
     state.inStock ||
     state.campaign ||
     state.isNew ||
@@ -119,7 +109,6 @@ export type FilterChange =
   | { type: "flag"; key: "inStock" | "campaign" | "isNew" }
   | { type: "sort"; value: SortKey }
   | { type: "page"; value: number }
-  | { type: "clearPrice" }
   | { type: "clearAll" };
 
 export function applyChange(state: FilterState, change: FilterChange): FilterState {
@@ -146,12 +135,8 @@ export function applyChange(state: FilterState, change: FilterChange): FilterSta
     case "page":
       next.page = change.value;
       break;
-    case "clearPrice":
-      next.minPrice = null;
-      next.maxPrice = null;
-      break;
     case "clearAll":
-      return { ...next, q: state.q, brands: [], categories: [], attributes: {}, minPrice: null, maxPrice: null, inStock: false, campaign: false, isNew: false };
+      return { ...next, q: state.q, brands: [], categories: [], attributes: {}, inStock: false, campaign: false, isNew: false };
     default: {
       const exhaustive: never = change;
       return exhaustive;

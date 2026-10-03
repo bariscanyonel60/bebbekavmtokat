@@ -21,7 +21,6 @@ function activeCount(state: FilterState): number {
     state.brands.length +
     state.categories.length +
     Object.values(state.attributes).reduce((sum, values) => sum + values.length, 0) +
-    (state.minPrice !== null || state.maxPrice !== null ? 1 : 0) +
     Number(state.inStock) +
     Number(state.campaign) +
     Number(state.isNew)

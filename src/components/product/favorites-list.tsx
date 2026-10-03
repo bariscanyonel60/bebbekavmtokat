@@ -4,12 +4,12 @@ import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { Heart, ImageOff, X } from "lucide-react";
-import { Price } from "@/components/product/price";
+import type { FavoriteProduct } from "@/app/api/products/route";
+import { WhatsAppIcon } from "@/components/ui/brand-icons";
 import { buttonClass } from "@/components/ui/button-styles";
-import type { ProductCardData } from "@/lib/catalog/products";
 import { toggleFavorite, useFavorites } from "@/lib/favorites";
 
-type LoadState = { key: string; products: ProductCardData[] } | null;
+type LoadState = { key: string; products: FavoriteProduct[] } | null;
 
 export function FavoritesList() {
   const ids = useFavorites();
@@ -21,7 +21,7 @@ export function FavoritesList() {
     const controller = new AbortController();
     fetch(`/api/products?ids=${encodeURIComponent(key)}`, { signal: controller.signal })
       .then((response) => (response.ok ? response.json() : { products: [] }))
-      .then((data: { products: ProductCardData[] }) => setLoaded({ key, products: data.products }))
+      .then((data: { products: FavoriteProduct[] }) => setLoaded({ key, products: data.products }))
       .catch(() => {});
     return () => controller.abort();
   }, [key]);
@@ -92,12 +92,25 @@ export function FavoritesList() {
                     {product.name}
                   </Link>
                 </h3>
-                <div className="mt-2">
-                  <Price price={product.price} salePrice={product.salePrice} showPrice={product.showPrice} />
+                <div className="mt-auto pt-4">
+                  {product.orderHref ? (
+                    <a
+                      href={product.orderHref}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      data-wa-intent="order"
+                      className={buttonClass("whatsapp", "sm", "w-full")}
+                      aria-label={`${product.name} için WhatsApp ile sipariş ver (yeni sekmede açılır)`}
+                    >
+                      <WhatsAppIcon className="size-[1.1rem]" />
+                      Sipariş Ver
+                    </a>
+                  ) : (
+                    <Link href={`/urun/${product.slug}`} className={buttonClass("secondary", "sm", "w-full")}>
+                      Ürünü İncele
+                    </Link>
+                  )}
                 </div>
-                <Link href={`/urun/${product.slug}`} className={buttonClass("secondary", "sm", "mt-auto w-full")}>
-                  Ürünü İncele
-                </Link>
               </div>
             </article>
           </li>

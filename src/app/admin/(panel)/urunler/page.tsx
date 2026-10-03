@@ -4,7 +4,7 @@ import Link from "next/link";
 import type { Prisma } from "@prisma/client";
 import { ImageOff, Plus, Search } from "lucide-react";
 import { AdminPageHeader, EmptyRow, tableClass, tdClass, thClass } from "@/components/admin/page-header";
-import { STOCK_LABELS } from "@/components/product/price";
+import { STOCK_LABELS } from "@/components/product/stock-label";
 import { buttonClass } from "@/components/ui/button-styles";
 import { getAdminCategoryOptions } from "@/lib/admin/options";
 import { requireAdmin } from "@/lib/auth/session";

@@ -3,7 +3,6 @@ import Link from "next/link";
 import { ImageOff } from "lucide-react";
 import { WhatsAppIcon } from "@/components/ui/brand-icons";
 import { FavoriteButton } from "@/components/product/favorite-button";
-import { Price } from "@/components/product/price";
 import { ProductBadges } from "@/components/product/product-badges";
 import type { ProductCardData } from "@/lib/catalog/products";
 import { getProductWhatsAppHref } from "@/lib/whatsapp-server";
@@ -15,7 +14,7 @@ type ProductCardProps = {
 };
 
 export async function ProductCard({ product, sizes = "(min-width: 1280px) 22vw, (min-width: 768px) 30vw, 46vw", eager = false }: ProductCardProps) {
-  const waHref = await getProductWhatsAppHref(product);
+  const waHref = await getProductWhatsAppHref(product, "order");
   const href = `/urun/${product.slug}`;
   const isFurniture = product.kind === "FURNITURE_SET";
 
@@ -65,28 +64,27 @@ export async function ProductCard({ product, sizes = "(min-width: 1280px) 22vw, 
             {product.name}
           </Link>
         </h3>
-        <div className="mt-2">
-          <Price price={product.price} salePrice={product.salePrice} showPrice={product.showPrice} />
-        </div>
-        <div className="mt-auto flex items-center gap-2 pt-4">
-          <Link
-            href={href}
-            className="inline-flex h-10 flex-1 items-center justify-center rounded-full border border-line-strong px-4 text-[0.8rem] font-medium text-ink transition-colors hover:border-ink hover:bg-white"
-          >
-            {isFurniture ? "Bu Odayı İncele" : "Ürünü İncele"}
-          </Link>
+        <div className="mt-auto pt-4">
           {waHref ? (
             <a
               href={waHref}
               target="_blank"
               rel="noopener noreferrer"
-              data-wa-intent="info"
-              className="inline-flex size-10 shrink-0 items-center justify-center rounded-full border border-wa/15 bg-wa-soft text-wa transition-colors hover:bg-[#d4e8de]"
-              aria-label={`${product.name} için WhatsApp'tan bilgi al`}
+              data-wa-intent="order"
+              className="inline-flex h-10 w-full items-center justify-center gap-2 rounded-full bg-wa px-4 text-[0.8rem] font-medium text-white shadow-soft transition-colors hover:bg-[#175a42]"
+              aria-label={`${product.name} için WhatsApp ile sipariş ver (yeni sekmede açılır)`}
             >
               <WhatsAppIcon className="size-[1.1rem]" />
+              Sipariş Ver
             </a>
-          ) : null}
+          ) : (
+            <Link
+              href={href}
+              className="inline-flex h-10 w-full items-center justify-center rounded-full border border-line-strong px-4 text-[0.8rem] font-medium text-ink transition-colors hover:border-ink hover:bg-white"
+            >
+              {isFurniture ? "Bu Odayı İncele" : "Ürünü İncele"}
+            </Link>
+          )}
         </div>
       </div>
     </article>

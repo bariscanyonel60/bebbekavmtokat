@@ -1,11 +1,10 @@
 import type { ReactNode } from "react";
 import Link from "next/link";
 import { Check, X } from "lucide-react";
-import { applyChange, filterHref, hasActiveFilters, serializeFilters, type FilterState } from "@/lib/catalog/filters";
+import { filterHref, hasActiveFilters, type FilterState } from "@/lib/catalog/filters";
 import type { CategoryOption } from "@/lib/catalog/listing";
 import type { Facets, FacetOption } from "@/lib/catalog/products";
 import { cx } from "@/lib/cx";
-import { formatPrice } from "@/lib/format";
 
 type FilterPanelProps = {
   basePath: string;
@@ -59,11 +58,6 @@ function OptionLink({ href, label, count, active, colorHex }: { href: string; la
       {count !== undefined ? <span className="text-xs text-ink-muted">{count}</span> : null}
     </Link>
   );
-}
-
-function hiddenInputs(state: FilterState) {
-  const query = serializeFilters(applyChange(state, { type: "clearPrice" }));
-  return [...new URLSearchParams(query.slice(1)).entries()].map(([name, value]) => <input key={name} type="hidden" name={name} value={value} />);
 }
 
 export function FilterPanel({ basePath, state, facets, categoryOptions, hideCampaignToggle = false }: FilterPanelProps) {
@@ -139,53 +133,6 @@ export function FilterPanel({ basePath, state, facets, categoryOptions, hideCamp
         );
       })}
 
-      {facets.priceRange ? (
-        <FilterGroup title="Fiyat Aralığı">
-          <form action={basePath} method="get" className="space-y-3">
-            {hiddenInputs(state)}
-            <div className="flex items-center gap-2">
-              <label className="flex-1">
-                <span className="sr-only">En düşük fiyat</span>
-                <input
-                  type="number"
-                  name="min"
-                  inputMode="numeric"
-                  min={0}
-                  defaultValue={state.minPrice ?? ""}
-                  placeholder={formatPrice(facets.priceRange.min)}
-                  className="h-11 w-full rounded-xl border border-line-strong bg-white px-3 text-sm placeholder:text-ink-muted focus:border-ink focus:outline-none"
-                />
-              </label>
-              <span className="text-ink-muted" aria-hidden="true">
-                –
-              </span>
-              <label className="flex-1">
-                <span className="sr-only">En yüksek fiyat</span>
-                <input
-                  type="number"
-                  name="max"
-                  inputMode="numeric"
-                  min={0}
-                  defaultValue={state.maxPrice ?? ""}
-                  placeholder={formatPrice(facets.priceRange.max)}
-                  className="h-11 w-full rounded-xl border border-line-strong bg-white px-3 text-sm placeholder:text-ink-muted focus:border-ink focus:outline-none"
-                />
-              </label>
-            </div>
-            <div className="flex items-center gap-3">
-              <button type="submit" className="h-10 rounded-full bg-ink px-5 text-sm font-medium text-ivory transition-colors hover:bg-ink-soft">
-                Uygula
-              </button>
-              {state.minPrice !== null || state.maxPrice !== null ? (
-                <Link href={filterHref(basePath, state, { type: "clearPrice" })} scroll={false} rel="nofollow" className="text-sm text-ink-soft hover:text-ink hover:underline">
-                  Fiyatı sıfırla
-                </Link>
-              ) : null}
-            </div>
-          </form>
-        </FilterGroup>
-      ) : null}
-
       <FilterGroup title="Durum">
         <ul className="space-y-0.5">
           <li>
@@ -222,10 +169,6 @@ export function ActiveFilterChips({ basePath, state, facets, categoryOptions }: 
       const option = facet?.options.find((item) => item.slug === value);
       chips.push({ label: option ? `${facet?.name}: ${option.label}` : value, href: filterHref(basePath, state, { type: "attribute", key, value }) });
     }
-  }
-  if (state.minPrice !== null || state.maxPrice !== null) {
-    const label = [state.minPrice !== null ? formatPrice(state.minPrice) : "", state.maxPrice !== null ? formatPrice(state.maxPrice) : ""].join(" – ");
-    chips.push({ label, href: filterHref(basePath, state, { type: "clearPrice" }) });
   }
   if (state.inStock) chips.push({ label: "Stokta olanlar", href: filterHref(basePath, state, { type: "flag", key: "inStock" }) });
   if (state.campaign) chips.push({ label: "Kampanyalı", href: filterHref(basePath, state, { type: "flag", key: "campaign" }) });
