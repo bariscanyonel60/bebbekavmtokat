@@ -3,8 +3,8 @@ import { copyFileSync, existsSync, statSync } from "node:fs";
 import os from "node:os";
 import path from "node:path";
 
-/** DATABASE_URL yoksa build sırasında scripts/demo-db.mjs ile üretilen SQLite demo verisi kullanılır. */
-export const isDemoDatabase = !process.env.DATABASE_URL;
+/** DATABASE_URL bir MySQL adresi değilse build sırasında scripts/demo-db.mjs ile üretilen SQLite demo verisi kullanılır. */
+export const isDemoDatabase = !process.env.DATABASE_URL?.startsWith("mysql://");
 
 // Serverless dosya sistemi salt okunur; admin değişiklikleri için kopya /tmp'de tutulur (kalıcı değildir).
 function demoDatabaseUrl(): string {
