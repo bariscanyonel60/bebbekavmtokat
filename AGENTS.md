@@ -11,19 +11,20 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
 # Bebbek AVM
 
 Premium bebek & çocuk ürünleri **katalog** sitesi. Sepet/ödeme yok; akış: keşif → kategori → filtre → ürün → WhatsApp.
-Stack: Next.js 16 (App Router, Turbopack) · React 19 · TypeScript · Tailwind v4 · Prisma 6 + MySQL · zod v4 · jose (admin oturumu).
+Stack: Next.js 16 (App Router, Turbopack) · React 19 · TypeScript · Tailwind v4 · Prisma 6 (proje içi SQLite; opsiyonel MySQL) · zod v4 · jose (admin oturumu).
 
 ## Çalıştırma
 
 ```sh
-npm install                 # prisma generate otomatik çalışır
-cp .env.example .env        # değerleri doldurun
-npm run db:local            # (opsiyonel) proje içi MySQL, port 3307, veri .local/ altında
-npx prisma migrate deploy   # şemayı uygula (geliştirmede: npm run db:migrate)
-npm run db:seed             # demo katalog + ADMIN_EMAIL/ADMIN_PASSWORD ile admin kullanıcısı
+npm install                 # scripts/db-setup.mjs: Prisma Client + prisma/demo/demo.db (seed verisiyle)
+cp .env.example .env        # AUTH_SECRET, ADMIN_EMAIL, ADMIN_PASSWORD doldurun (DATABASE_URL boş kalabilir)
 npm run dev                 # http://localhost:3000 — admin: /admin
+npm run db:demo-reset       # SQLite verisini sıfırlayıp seed'i yeniden yükler
 ```
 
+- Veritabanı kuralı (`scripts/db-setup.mjs` ve `src/lib/db.ts` aynı kuralı uygular): `DATABASE_URL` `mysql://` ile başlıyorsa MySQL, aksi halde proje içi SQLite (`prisma/demo/`, gitignore'da, şemadan otomatik türetilir). Kaynak şema her zaman `prisma/schema.prisma` (MySQL); SQLite kopyasını elle düzenlemeyin.
+- `.env`'de `DATABASE_URL`'i değiştirdikten sonra `npm install` (veya `node scripts/db-setup.mjs`) çalıştırıp dev server'ı yeniden başlatın; Prisma Client sağlayıcıya göre üretilir.
+- MySQL modu: `npm run db:local` (proje içi MySQL, port 3307, veri `.local/`), `npx prisma migrate deploy`, `npm run db:seed`.
 - Aynı projede yalnızca **bir** `next dev` çalışabilir; ikincisi reddedilir.
 - `src/app/globals.css` içindeki `@import "tailwindcss" source("../")` Tailwind taramasını `src/` ile sınırlar. Kaldırılırsa Turbopack `.local/mysql.sock` soketini okumaya çalışıp çöker.
 
@@ -46,9 +47,9 @@ Test paketi yok; değişiklikleri tarayıcıda kontrol edin (ana sayfa, `/katego
 
 ## Deploy
 
-- Vercel: GitHub `bariscanyonel60/bebbekavmtokat` reposunun `main` dalına her push otomatik production deploy'dur. `vercel.json` build komutu `sh scripts/vercel-build.sh` (bölge `fra1`).
-- `DATABASE_URL` tanımlıysa build `prisma migrate deploy && next build` çalıştırır (internetten erişilebilen MySQL gerekir).
-- `DATABASE_URL` yoksa veya `mysql://` ile başlamıyorsa **demo modu**: `scripts/demo-db.mjs` şemanın SQLite kopyasını (`prisma/demo/`, gitignore'da) üretip seed verisini yükler; `src/lib/db.ts` bunu kullanır, `robots.txt` tüm siteyi engeller. Admin değişiklikleri sunucu örneğinin `/tmp` kopyasına yazılır, kalıcı değildir. Gerçek DB bağlanınca Vercel'e `DATABASE_URL` eklenip redeploy edilir; kod değişikliği gerekmez.
+- Vercel: GitHub `bariscanyonel60/bebbekavmtokat` reposunun `main` dalına her push otomatik production deploy'dur. `vercel.json` build komutu `node scripts/db-setup.mjs --deploy --if-missing && next build` (bölge `fra1`).
+- MySQL `DATABASE_URL` tanımlıysa build önce `prisma migrate deploy` çalıştırır (internetten erişilebilen MySQL gerekir).
+- Aksi halde site SQLite seed verisiyle yayınlanır ve `robots.txt` tüm siteyi engeller. Vercel'de admin değişiklikleri sunucu örneğinin `/tmp` kopyasına yazılır, kalıcı değildir. Gerçek DB bağlanınca Vercel'e `DATABASE_URL` eklenip redeploy edilir; kod değişikliği gerekmez.
 - Prisma kodu hem MySQL hem SQLite istemcisiyle derlenmeli: `skipDuplicates`, `mode: "insensitive"`, raw SQL gibi MySQL'e özgü özellikler kullanmayın.
 - Production'da `AUTH_SECRET` güçlü ve benzersiz olmalı; `SITE_URL=https://bebbekavm.com`.
 - Serverless (Vercel/Netlify) için Cloudinary değişkenleri zorunlu; yerel upload klasörü kalıcı değildir.

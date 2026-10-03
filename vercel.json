@@ -1,6 +1,6 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "framework": "nextjs",
-  "buildCommand": "sh scripts/vercel-build.sh",
+  "buildCommand": "node scripts/db-setup.mjs --deploy --if-missing && next build",
   "regions": ["fra1"]
 }

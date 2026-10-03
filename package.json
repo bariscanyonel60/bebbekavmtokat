@@ -3,17 +3,20 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
+    "predev": "node scripts/db-setup.mjs --if-missing",
     "dev": "next dev",
+    "prebuild": "node scripts/db-setup.mjs --if-missing",
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
     "typecheck": "tsc --noEmit",
     "db:migrate": "prisma migrate dev",
     "db:deploy": "prisma migrate deploy",
-    "db:seed": "prisma db seed",
+    "db:seed": "tsx prisma/seed.ts",
+    "db:demo-reset": "node scripts/db-setup.mjs --reset",
     "db:studio": "prisma studio",
     "db:local": "sh scripts/local-mysql.sh",
-    "postinstall": "prisma generate"
+    "postinstall": "node scripts/db-setup.mjs"
   },
   "dependencies": {
     "@prisma/client": "^6.19.3",
@@ -38,8 +41,5 @@
     "tailwindcss": "^4",
     "tsx": "^4.23.15",
     "typescript": "^5"
-  },
-  "prisma": {
-    "seed": "tsx prisma/seed.ts"
   }
 }
